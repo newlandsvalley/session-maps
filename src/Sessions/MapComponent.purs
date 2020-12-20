@@ -15,14 +15,25 @@ import Halogen.HTML.Core (HTML)
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
 import Halogen.HTML.Events as HE
+import OpenLayers.Feature as Feature
 import OpenLayers.Layer.Tile as Tile
 import OpenLayers.Map as Map
+import OpenLayers.Geom.Point as Point
 import OpenLayers.Proj as Proj
 import OpenLayers.Source.OSM as OSM
+import OpenLayers.Layer.Vector as VectorLayer
+import OpenLayers.Source.Vector as VectorSource
 import OpenLayers.View as View
 import Sessions.Data (SessionKey, SessionsMapping, 
         ukSessionsMapping, sessionKey)
 import Sessions.Postcode (LonLat, loadGeoInfo)
+
+
+import OpenLayers.Style.Circle as Circle
+import OpenLayers.Style.Fill as Fill
+import OpenLayers.Style.Stroke as Stroke
+import OpenLayers.Style.Style as Style
+
 
 type Slot = H.Slot (Const Void) Void
 
@@ -137,9 +148,13 @@ component =
             Left err -> 
               pure unit 
             Right lonLat -> do 
+              -- clear the old map
               _ <- H.liftEffect $ sequence_ $ map Map.clearTarget state.map
-              newMap <- createBasicMap lonLat 
-              H.modify_ (_ { map = Just newMap } )
+              -- create the new one
+              map0 <- createBasicMap lonLat 
+              -- and add a layer which marks the centre
+              map1 <- addMarker lonLat map0
+              H.modify_ (_ { map = Just map1 } )
           pure unit
         Nothing -> 
           pure unit
@@ -147,7 +162,7 @@ component =
 
 --
 -- Creates a basic map
---
+-- 
 createBasicMap :: forall o m . MonadAff m
           => LonLat -> H.HalogenM State Action () o m Map.Map
 createBasicMap lonLat = do
@@ -157,7 +172,7 @@ createBasicMap lonLat = do
     osm <- OSM.create'
     tile <- Tile.create {source: osm}
 
-    -- Create the view of Edinburgh
+    -- Create the view centered on lonLat
     view <- View.create { projection: Proj.epsg_3857
                         , center: Proj.fromLonLat lonLat (Just Proj.epsg_3857)
                         , zoom: defaultZoom
@@ -174,6 +189,37 @@ createBasicMap lonLat = do
   -- Return with the map
   pure mymap
 
+--
+-- Create a marker at the latitude and longitude we need (initially at centre) 
+-- and add it as a new layer to the map.
+--
+addMarker :: forall o m . MonadAff m
+          => LonLat -> Map.Map -> H.HalogenM State Action () o m Map.Map
+addMarker lonLat mymap = 
+  H.liftEffect $ do 
+
+    pfill <- Fill.create { color: Fill.color.asString "#c73326" }
+    pstroke <- Stroke.create { color: Stroke.color.asString "white", width: 2}
+    pcircle <- Circle.create { radius: 8.0
+                              , fill: pfill
+                              , stroke: pstroke
+                              }
+    pstyle <- Style.create {image: pcircle}
+
+    point <- Point.create 
+      (Proj.fromLonLat lonLat (Just Proj.epsg_3857))
+      Nothing
+    marker <- Feature.create $ Feature.Properties { geometry: point, name: "session" }
+
+    Feature.setStyle (Just pstyle) marker
+
+    vs <- VectorSource.create { features: VectorSource.features.asArray [marker] }
+    layer <- VectorLayer.create { source : vs } 
+    log "adding marker layer to map"
+
+    _ <- Map.addLayer layer mymap
+    pure mymap
+
 toSessionKeys :: SessionsMapping -> Array SessionKey 
 toSessionKeys sessionsMapping = 
   let 
@@ -185,4 +231,4 @@ edinburghLonLat :: LonLat
 edinburghLonLat = [-3.1883, 55.9533 ]
 
 defaultZoom :: Number
-defaultZoom = 15.0
+defaultZoom = 16.0
