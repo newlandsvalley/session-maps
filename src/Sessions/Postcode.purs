@@ -20,7 +20,6 @@ import Data.Argonaut (Json, decodeJson, JsonDecodeError, stringify, (.:))
 -- | LonLat only allows 2 numbers - one each for longitude and latitude
 type LonLat = Array Number
 
-
 loadGeoInfo ::
   String
   -> Aff (Either String LonLat)

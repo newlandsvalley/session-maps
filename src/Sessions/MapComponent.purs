@@ -8,6 +8,7 @@ import Data.Either (Either(..))
 import Data.Map (empty, lookup, values)
 import Data.List (toUnfoldable)
 import Data.Foldable (sequence_)
+import Data.Tuple (Tuple(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Console (log)
 import Halogen as H
@@ -24,9 +25,10 @@ import OpenLayers.Source.OSM as OSM
 import OpenLayers.Layer.Vector as VectorLayer
 import OpenLayers.Source.Vector as VectorSource
 import OpenLayers.View as View
-import Sessions.Data (SessionKey, SessionsMapping, 
-        ukSessionsMapping, sessionKey)
-import Sessions.Postcode (LonLat, loadGeoInfo)
+import Sessions.Mapping (SessionKey, SessionsMapping, 
+        ukSessionsMapping, 
+        readThroughCachedLonLat, sessionKey)
+import Sessions.Postcode (LonLat)
 
 
 import OpenLayers.Style.Circle as Circle
@@ -139,26 +141,21 @@ component =
 
     HandleChangeSession key -> do
       state <- H.get
-      let
-        mSessionDetails = lookup key state.sessions
-      case mSessionDetails of 
-        Just details -> do 
-          eLonLat <- H.liftAff $ loadGeoInfo details.postcode
-          case eLonLat of 
-            Left err -> 
-              pure unit 
-            Right lonLat -> do 
-              -- clear the old map
-              _ <- H.liftEffect $ sequence_ $ map Map.clearTarget state.map
-              -- create the new one
-              map0 <- createBasicMap lonLat 
-              -- and add a layer which marks the centre
-              map1 <- addMarker lonLat map0
-              H.modify_ (_ { map = Just map1 } )
-          pure unit
-        Nothing -> 
-          pure unit
-      pure unit
+      Tuple newSessions eLonLat <- H.liftAff $ readThroughCachedLonLat key state.sessions
+      case eLonLat of 
+        Left err -> 
+          pure unit 
+        Right lonLat -> do 
+          let
+            mSessionDetails = lookup key state.sessions
+          -- clear the old map
+          _ <- H.liftEffect $ sequence_ $ map Map.clearTarget state.map
+          -- create the new one
+          map0 <- createBasicMap lonLat 
+          -- and add a layer which marks the centre
+          map1 <- addMarker lonLat map0
+          H.modify_ (_ { map = Just map1
+                       , sessions =  newSessions } )
 
 --
 -- Creates a basic map
@@ -219,6 +216,11 @@ addMarker lonLat mymap =
 
     _ <- Map.addLayer layer mymap
     pure mymap
+
+
+        
+
+    
 
 toSessionKeys :: SessionsMapping -> Array SessionKey 
 toSessionKeys sessionsMapping = 
