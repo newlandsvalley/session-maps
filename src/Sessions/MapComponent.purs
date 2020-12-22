@@ -1,46 +1,44 @@
 module Sessions.MapComponent where
 
-import Prelude (Unit, Void, ($), (<<<), (==), bind, discard, map, pure, unit)
-import Data.Const (Const)
-import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Array (cons, head)
+import Data.Const (Const)
 import Data.Either (Either(..))
-import Data.Map (empty, lookup, values)
-import Data.List (toUnfoldable)
 import Data.Foldable (sequence_)
+import Data.List (toUnfoldable)
+import Data.Map (empty, lookup, values)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Console (log)
 import Halogen as H
-import Halogen.HTML.Core (HTML)
 import Halogen.HTML as HH
-import Halogen.HTML.Properties as HP
+import Halogen.HTML.Core (HTML)
 import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties as HP
+import Sessions.Mapping (SessionKey)
 import OpenLayers.Feature as Feature
-import OpenLayers.Layer.Tile as Tile
-import OpenLayers.Map as Map
 import OpenLayers.Geom.Point as Point
+import OpenLayers.Layer.Tile as Tile
+import OpenLayers.Layer.Vector as VectorLayer
+import OpenLayers.Map as Map
 import OpenLayers.Proj as Proj
 import OpenLayers.Source.OSM as OSM
-import OpenLayers.Layer.Vector as VectorLayer
 import OpenLayers.Source.Vector as VectorSource
-import OpenLayers.View as View
-import Sessions.Mapping (SessionKey, SessionsMapping, 
-        ukSessionsMapping, 
-        readThroughCachedLonLat, sessionKey)
-import Sessions.Postcode (LonLat)
-
-
 import OpenLayers.Style.Circle as Circle
 import OpenLayers.Style.Fill as Fill
 import OpenLayers.Style.Stroke as Stroke
 import OpenLayers.Style.Style as Style
+import OpenLayers.View as View
+import Prelude (Unit, Void, ($), (<<<), (==), bind, discard, map, pure, unit)
+import Sessions.Mapping (SessionKey, SessionsMapping, ukSessionsMapping, readThroughCachedLonLat, sessionKey)
+import Sessions.Postcode (LonLat)
 
 
 type Slot = H.Slot (Const Void) Void
 
 type State =  { map :: Maybe Map.Map         -- | The Map on the page
               , sessions :: SessionsMapping  -- | Mapping from session key to details
+              , key :: SessionKey            -- | The currently selected session
               }
 
 type ChildSlots = ()
@@ -73,6 +71,7 @@ component =
   initialState :: i -> State
   initialState ml =  { map : Nothing
                      , sessions : empty
+                     , key: defaultSessionKey
                      }
 
   render :: State -> H.ComponentHTML Action ChildSlots m
@@ -97,7 +96,7 @@ component =
   renderSessionsMenu sessions =
     let
       currentSession =
-        fromMaybe "London: The Glastone Arms" $ head sessions
+        fromMaybe defaultSessionKey $ head sessions
     in
       HH.div
         [ HP.class_ (H.ClassName "leftPanelComponent")]
@@ -137,7 +136,7 @@ component =
       let
         sessionKeys = toSessionKeys ukSessionsMapping 
         currentSession =
-          fromMaybe "London: The Glastone Arms" $ head sessionKeys
+          fromMaybe defaultSessionKey $ head sessionKeys
       _ <- H.modify_ (_ { sessions = ukSessionsMapping })
       _ <- handleQuery (HandleChangeSession currentSession unit)
       pure unit
@@ -170,7 +169,8 @@ component =
           -- and add a layer which marks the centre
           map1 <- addMarker lonLat map0
           H.modify_ (_ { map = Just map1
-                       , sessions =  newSessions } )
+                       , sessions =  newSessions
+                       , key = key } )
       pure (Just next)
 
 --
@@ -243,3 +243,7 @@ toSessionKeys sessionsMapping =
 
 defaultZoom :: Number
 defaultZoom = 17.0
+
+defaultSessionKey :: SessionKey
+defaultSessionKey = 
+  "London: The Glastone Arms"
