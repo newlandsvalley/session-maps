@@ -1,6 +1,6 @@
 module Sessions.MapComponent where
 
-import Data.Array (cons, head)
+import Data.Array (head)
 import Data.Const (Const)
 import Data.Either (Either(..))
 import Data.Foldable (sequence_)
@@ -15,7 +15,6 @@ import Halogen.HTML as HH
 import Halogen.HTML.Core (HTML)
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Sessions.Mapping (SessionKey)
 import OpenLayers.Feature as Feature
 import OpenLayers.Geom.Point as Point
 import OpenLayers.Layer.Tile as Tile
@@ -78,7 +77,7 @@ component =
   render state =
     HH.div_
       [ renderMap state
-      , renderSessionsMenu (toSessionKeys state.sessions)  ]
+      , renderSessionsMenu state.key (toSessionKeys state.sessions)  ]
 
   --- The map is rendered by side-effct into the div tag whose id is 'map'
   --- This tag should have appropriate height and width designated in the css
@@ -92,29 +91,22 @@ component =
        , HH.div [HP.id_ "map" ][]
        ]
 
-  renderSessionsMenu :: Array SessionKey ->  H.ComponentHTML Action () m
-  renderSessionsMenu sessions =
-    let
-      currentSession =
-        fromMaybe defaultSessionKey $ head sessions
-    in
-      HH.div
-        [ HP.class_ (H.ClassName "leftPanelComponent")]
-        [ HH.label
-           [ HP.class_ (H.ClassName "labelAlignment") ]
-           [ HH.text "choose session: " ]
-        , HH.select
-            [ HP.class_ $ H.ClassName "selection"
-            , HP.id_  "session-menu"
-            , HP.value currentSession
-            , HE.onValueChange
-                (Just <<<  HandleChangeSessionRequest)
-            ]
-            (cons
-              (HH.option [ ] [ HH.text currentSession])
-              (sessionOptions sessions currentSession)
-            )
-        ]
+  renderSessionsMenu :: SessionKey -> Array SessionKey ->  H.ComponentHTML Action () m
+  renderSessionsMenu currentSession sessions =
+    HH.div
+      [ HP.class_ (H.ClassName "leftPanelComponent")]
+      [ HH.label
+         [ HP.class_ (H.ClassName "labelAlignment") ]
+         [ HH.text "choose session: " ]
+      , HH.select
+          [ HP.class_ $ H.ClassName "selection"
+          , HP.id_  "session-menu"
+          , HP.value currentSession
+          , HE.onValueChange
+              (Just <<<  HandleChangeSessionRequest)
+          ]
+          (sessionOptions sessions currentSession)
+      ]
 
   sessionOptions :: ∀ a b. Array SessionKey -> SessionKey -> Array (HTML a b)
   sessionOptions sessions currentSession =
