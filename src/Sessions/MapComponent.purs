@@ -1,6 +1,6 @@
 module Sessions.MapComponent where
 
-import Prelude (Unit, Void, ($), (<<<), (==), bind, discard, map, negate, pure, unit)
+import Prelude (Unit, Void, ($), (<<<), (==), bind, discard, map, pure, unit)
 import Data.Const (Const)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Array (cons, head)
@@ -49,11 +49,14 @@ type ChildSlots = ()
 data Action
   = Initialize
   | Finalize
-  | HandleChangeSession SessionKey
+  | HandleChangeSessionRequest SessionKey
+
+data Query a =
+    HandleChangeSession SessionKey a
 
 -- | The component definition
-component :: forall q i o m . MonadAff m
-          => H.Component HH.HTML q i o m
+component :: forall i o m . MonadAff m
+          => H.Component HH.HTML Query i o m
 component =
   H.mkComponent
     { initialState
@@ -106,7 +109,7 @@ component =
             , HP.id_  "session-menu"
             , HP.value currentSession
             , HE.onValueChange
-                (Just <<<  HandleChangeSession)
+                (Just <<<  HandleChangeSessionRequest)
             ]
             (cons
               (HH.option [ ] [ HH.text currentSession])
@@ -130,16 +133,28 @@ component =
 
   handleAction ∷ Action -> H.HalogenM State Action ChildSlots o m Unit
   handleAction = case _ of
-    Initialize -> do
-      mymap <- createBasicMap edinburghLonLat
-      H.modify_ (_ { map = Just mymap
-                   , sessions = ukSessionsMapping
-                   }
-                )
+    Initialize -> do      
+      let
+        sessionKeys = toSessionKeys ukSessionsMapping 
+        currentSession =
+          fromMaybe "London: The Glastone Arms" $ head sessionKeys
+      _ <- H.modify_ (_ { sessions = ukSessionsMapping })
+      _ <- handleQuery (HandleChangeSession currentSession unit)
+      pure unit
+
     Finalize -> do
       pure unit
 
-    HandleChangeSession key -> do
+    HandleChangeSessionRequest key -> do
+      _ <- handleQuery (HandleChangeSession key unit)
+      pure unit
+
+  handleQuery :: forall a.
+    MonadAff m =>
+    Query a ->
+    H.HalogenM State Action ChildSlots o m (Maybe a)
+  handleQuery = case _ of
+    HandleChangeSession key next -> do
       state <- H.get
       Tuple newSessions eLonLat <- H.liftAff $ readThroughCachedLonLat key state.sessions
       case eLonLat of 
@@ -156,6 +171,7 @@ component =
           map1 <- addMarker lonLat map0
           H.modify_ (_ { map = Just map1
                        , sessions =  newSessions } )
+      pure (Just next)
 
 --
 -- Creates a basic map
@@ -215,12 +231,8 @@ addMarker lonLat mymap =
     log "adding marker layer to map"
 
     _ <- Map.addLayer layer mymap
-    pure mymap
-
-
-        
-
-    
+    pure mymap  
+   
 
 toSessionKeys :: SessionsMapping -> Array SessionKey 
 toSessionKeys sessionsMapping = 
@@ -229,8 +241,5 @@ toSessionKeys sessionsMapping =
   in
     map sessionKey sessionsArray
 
-edinburghLonLat :: LonLat
-edinburghLonLat = [-3.1883, 55.9533 ]
-
 defaultZoom :: Number
-defaultZoom = 16.0
+defaultZoom = 17.0
