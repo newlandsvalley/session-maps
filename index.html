@@ -5,8 +5,50 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.4.3/css/ol.css" type="text/css">
   <style>
       #map {
-        height: 600px;
-        width: 600px;
+        height: 450px;
+        width: 800px;
+      }
+      
+      #session-maps {
+        width: 80%;
+        margin: 0 auto;
+      }
+
+
+      select {
+        background-color: #cccc99;
+	      margin-top: 8px;   /* match with label */
+        font-size: 1.25em;
+      }
+
+      label {
+        display: inline-block;
+        padding: 3px 6px;
+        text-align: right;
+        width: 200px;
+        vertical-align: top;
+	      font-size: 1.25em;
+	      margin-top: 8px; /* match with select (dropdown) */
+      }
+      
+      /** definition lists */
+
+      dl {
+       padding: 0.5em;
+      }
+      dt {
+        float: left;
+        clear: left;
+        font-weight: bold;
+        color: blue;
+      }
+      dt:after {
+        content: ":";
+      }
+      dd {
+        margin: 0 0 0 110px;
+        width: 400px;
+        padding: 0 0 0.3em 0;
       }
   </style>
 </head>

@@ -25,7 +25,7 @@ type SessionDetails =
   ,  postcode :: String 
   ,  venue :: String 
   ,  startTime :: String 
-  ,  occurrence :: String
+  ,  schedule :: String
   ,  eLonLat :: Either String LonLat
   }
 
@@ -98,7 +98,7 @@ gladstoneLondon =
   ,  postcode : "SE1 1QN"
   ,  venue : "The Gladstone Arms" 
   ,  startTime : "8.00 p.m."
-  ,  occurrence : "Monthly, Thursdays"
+  ,  schedule : "Monthly, Thursdays"
   ,  eLonLat :  Left "not loaded"
   }
 
@@ -109,7 +109,7 @@ greenManLondon =
   ,  postcode : "W1W 7EP"
   ,  venue : "The Green Man" 
   ,  startTime : "7.00 p.m."
-  ,  occurrence : "Monthly, Tuesdays"
+  ,  schedule : "Monthly, Tuesdays"
   ,  eLonLat :  Left "not loaded"
   }
  
@@ -120,6 +120,6 @@ sofisEdinburgh =
   ,  postcode : "EH8 9LP"
   ,  venue : "Sofi’s Southside" 
   ,  startTime : "2.00 p.m."
-  ,  occurrence : "Every fourth Sunday"
+  ,  schedule : "Every fourth Sunday"
   ,  eLonLat : Left "not loaded"
   } 

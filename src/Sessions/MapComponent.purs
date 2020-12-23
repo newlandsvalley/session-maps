@@ -29,7 +29,7 @@ import OpenLayers.Style.Stroke as Stroke
 import OpenLayers.Style.Style as Style
 import OpenLayers.View as View
 import Prelude (Unit, Void, ($), (<<<), (==), bind, discard, map, pure, unit)
-import Sessions.Mapping (SessionKey, SessionsMapping, ukSessionsMapping, readThroughCachedLonLat, sessionKey)
+import Sessions.Mapping (SessionDetails, SessionKey, SessionsMapping, ukSessionsMapping, readThroughCachedLonLat, sessionKey)
 import Sessions.Postcode (LonLat)
 
 
@@ -75,9 +75,12 @@ component =
 
   render :: State -> H.ComponentHTML Action ChildSlots m
   render state =
-    HH.div_
+    HH.div       
+      [ HP.id_ "session-maps"]
       [ renderMap state
-      , renderSessionsMenu state.key (toSessionKeys state.sessions)  ]
+      , renderSessionDetails $ lookup state.key state.sessions
+      , renderSessionsMenu state.key (toSessionKeys state.sessions) 
+       ]
 
   --- The map is rendered by side-effct into the div tag whose id is 'map'
   --- This tag should have appropriate height and width designated in the css
@@ -86,8 +89,8 @@ component =
   renderMap state =
     HH.div_
        [ HH.div
-           [ HP.id_ "parent" ]
-           [ HH.text "map will go here" ]
+           [ HP.id_ "title" ]
+           [ HH.h2_ [HH.text state.key ]]
        , HH.div [HP.id_ "map" ][]
        ]
 
@@ -121,6 +124,32 @@ component =
             [ HH.text sesh]
     in
       map f sessions
+
+  renderSessionDetails :: Maybe SessionDetails -> H.ComponentHTML Action ChildSlots m
+  renderSessionDetails mSessionDetails = 
+    case mSessionDetails of 
+      Just details ->
+        HH.dl
+          [ ]
+          [ renderKV "street" details.street
+          , renderKV "postcode" details.postcode
+          , renderKV "start time" details.startTime
+          , renderKV "schedule" details.schedule
+          ]
+      Nothing -> 
+        HH.text ""
+
+  
+  -- render key-value pairs as rows in a definition list
+  renderKV :: ∀ a s. String -> String -> H.ComponentHTML a s m
+  renderKV k v =
+    HH.div_
+      [
+      HH.dt_
+        [ HH.text k ]
+      , HH.dd_
+        [ HH.text v ]
+      ]
 
   handleAction ∷ Action -> H.HalogenM State Action ChildSlots o m Unit
   handleAction = case _ of
