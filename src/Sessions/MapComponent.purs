@@ -23,15 +23,14 @@ import OpenLayers.Map as Map
 import OpenLayers.Proj as Proj
 import OpenLayers.Source.OSM as OSM
 import OpenLayers.Source.Vector as VectorSource
-import OpenLayers.Style.Circle as Circle
 import OpenLayers.Style.Fill as Fill
+import OpenLayers.Style.Icon as Icon
 import OpenLayers.Style.Stroke as Stroke
 import OpenLayers.Style.Style as Style
 import OpenLayers.View as View
 import Prelude (Unit, Void, ($), (<<<), (==), bind, discard, map, pure, unit)
 import Sessions.Mapping (SessionDetails, SessionKey, SessionsMapping, ukSessionsMapping, readThroughCachedLonLat, sessionKey)
 import Sessions.Postcode (LonLat)
-
 
 type Slot = H.Slot (Const Void) Void
 
@@ -188,7 +187,7 @@ component =
           -- create the new one
           map0 <- createBasicMap lonLat 
           -- and add a layer which marks the centre
-          map1 <- addMarker lonLat map0
+          map1 <- addIconMarker lonLat map0
           H.modify_ (_ { map = Just map1
                        , sessions =  newSessions
                        , key = key } )
@@ -224,21 +223,25 @@ createBasicMap lonLat = do
   pure mymap
 
 --
--- Create a marker at the latitude and longitude we need (initially at centre) 
+-- Create an icon marker at the latitude and longitude we need (initially at centre) 
 -- and add it as a new layer to the map.
 --
-addMarker :: forall o m . MonadAff m
+addIconMarker :: forall o m . MonadAff m
           => LonLat -> Map.Map -> H.HalogenM State Action () o m Map.Map
-addMarker lonLat mymap = 
+addIconMarker lonLat mymap = 
   H.liftEffect $ do 
 
     pfill <- Fill.create { color: Fill.color.asString "#c73326" }
     pstroke <- Stroke.create { color: Stroke.color.asString "white", width: 2}
-    pcircle <- Circle.create { radius: 8.0
-                              , fill: pfill
-                              , stroke: pstroke
-                              }
-    pstyle <- Style.create {image: pcircle}
+
+    picon <- Icon.create { anchor : [ 0.5, 46.0 ]
+                         , anchorXUnits : "fraction"
+                         , anchorYUnits : "pixels"
+                         , scale : 0.025
+                         , src : "assets/images/markerpin.png"       
+                         }
+                         
+    pstyle <- Style.create {image: picon}
 
     point <- Point.create 
       (Proj.fromLonLat lonLat (Just Proj.epsg_3857))
@@ -249,10 +252,10 @@ addMarker lonLat mymap =
 
     vs <- VectorSource.create { features: VectorSource.features.asArray [marker] }
     layer <- VectorLayer.create { source : vs } 
-    log "adding marker layer to map"
+    log "adding icon marker layer to map"
 
     _ <- Map.addLayer layer mymap
-    pure mymap  
+    pure mymap      
    
 
 toSessionKeys :: SessionsMapping -> Array SessionKey 
