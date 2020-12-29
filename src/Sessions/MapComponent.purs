@@ -23,9 +23,7 @@ import OpenLayers.Map as Map
 import OpenLayers.Proj as Proj
 import OpenLayers.Source.OSM as OSM
 import OpenLayers.Source.Vector as VectorSource
-import OpenLayers.Style.Fill as Fill
 import OpenLayers.Style.Icon as Icon
-import OpenLayers.Style.Stroke as Stroke
 import OpenLayers.Style.Style as Style
 import OpenLayers.View as View
 import Prelude (Unit, Void, ($), (<<<), (==), bind, discard, map, pure, unit)
@@ -231,8 +229,10 @@ addIconMarker :: forall o m . MonadAff m
 addIconMarker lonLat mymap = 
   H.liftEffect $ do 
 
-    pfill <- Fill.create { color: Fill.color.asString "#c73326" }
-    pstroke <- Stroke.create { color: Stroke.color.asString "white", width: 2}
+    --- we can also use fill and stroke against the icon if we prefer
+    ---
+    --- pfill <- Fill.create { color: Fill.color.asString "#c73326" }
+    --- pstroke <- Stroke.create { color: Stroke.color.asString "white", width: 2}    
 
     picon <- Icon.create { anchor : [ 0.5, 46.0 ]
                          , anchorXUnits : "fraction"
@@ -240,7 +240,7 @@ addIconMarker lonLat mymap =
                          , scale : 0.025
                          , src : "assets/images/markerpin.png"       
                          }
-                         
+                             
     pstyle <- Style.create {image: picon}
 
     point <- Point.create 
@@ -256,7 +256,38 @@ addIconMarker lonLat mymap =
 
     _ <- Map.addLayer layer mymap
     pure mymap      
-   
+
+--
+-- Ditto, but using a graphics circle as the marker
+--
+{-
+addCircleMarker :: forall o m . MonadAff m
+          => LonLat -> Map.Map -> H.HalogenM State Action () o m Map.Map
+addCircleMarker lonLat mymap = 
+  H.liftEffect $ do 
+
+    pfill <- Fill.create { color: Fill.color.asString "#c73326" }
+    pstroke <- Stroke.create { color: Stroke.color.asString "white", width: 2}
+    pcircle <- Circle.create { radius: 8.0
+                              , fill: pfill
+                              , stroke: pstroke
+                              }
+    pstyle <- Style.create {image: pcircle}
+
+    point <- Point.create 
+      (Proj.fromLonLat lonLat (Just Proj.epsg_3857))
+      Nothing
+    marker <- Feature.create $ Feature.Properties { geometry: point, name: "session" }
+
+    Feature.setStyle (Just pstyle) marker
+
+    vs <- VectorSource.create { features: VectorSource.features.asArray [marker] }
+    layer <- VectorLayer.create { source : vs } 
+    log "adding circle graphic marker layer to map"
+
+    _ <- Map.addLayer layer mymap
+    pure mymap   
+-}
 
 toSessionKeys :: SessionsMapping -> Array SessionKey 
 toSessionKeys sessionsMapping = 
