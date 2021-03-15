@@ -104,16 +104,23 @@ in  upstream
       }
 -------------------------------
 -}
-
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.13.8-20201206/packages.dhall sha256:c9ffd7577fb8ee2197309591d7ccc0f506ee37b9078866f0ef159f5abbb1b32b
+      https://github.com/purescript/package-sets/releases/download/psc-0.14.0-20210313/packages.dhall sha256:ba6368b31902aad206851fec930e89465440ebf5a1fe0391f8be396e2d2f1d87
 
-let additions = {
-    openlayers =
-    { dependencies =[ "console", "effect", "foreign", "functions", "maybe", "nullable", "psci-support"]
-    , repo = "https://github.com/dnulnets/purescript-openlayers.git"
-    , version = "v0.1.9"
-    }
-}
+let additions =
+      { openlayers =
+        { dependencies =
+          [ "console"
+          , "effect"
+          , "foreign"
+          , "functions"
+          , "maybe"
+          , "nullable"
+          , "psci-support"
+          ]
+        , repo = "https://github.com/dnulnets/purescript-openlayers.git"
+        , version = "v0.2.0"
+        }
+      }
 
 in  upstream // additions

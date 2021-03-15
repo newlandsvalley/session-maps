@@ -9,6 +9,7 @@ You can edit this file as you like.
                  , "effect"
                  , "psci-support"
                  , "halogen"
+                 , "js-uri"
                  , "openlayers"
                  ]
 , packages = ./packages.dhall

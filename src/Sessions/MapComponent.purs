@@ -26,7 +26,7 @@ import OpenLayers.Source.Vector as VectorSource
 import OpenLayers.Style.Icon as Icon
 import OpenLayers.Style.Style as Style
 import OpenLayers.View as View
-import Prelude (Unit, Void, ($), (<<<), (==), bind, discard, map, pure, unit)
+import Prelude (Unit, Void, ($), (==), bind, discard, map, pure, unit)
 import Sessions.Mapping (SessionDetails, SessionKey, SessionsMapping, ukSessionsMapping, readThroughCachedLonLat, sessionKey)
 import Sessions.Postcode (LonLat)
 
@@ -50,7 +50,7 @@ data Query a =
 
 -- | The component definition
 component :: forall i o m . MonadAff m
-          => H.Component HH.HTML Query i o m
+          => H.Component Query i o m
 component =
   H.mkComponent
     { initialState
@@ -73,7 +73,7 @@ component =
   render :: State -> H.ComponentHTML Action ChildSlots m
   render state =
     HH.div       
-      [ HP.id_ "session-maps"]
+      [ HP.id "session-maps"]
       [ renderMap state
       , renderSessionDetails $ lookup state.key state.sessions
       , renderSessionsMenu state.key (toSessionKeys state.sessions) 
@@ -86,9 +86,9 @@ component =
   renderMap state =
     HH.div_
        [ HH.div
-           [ HP.id_ "title" ]
+           [ HP.id "title" ]
            [ HH.h2_ [HH.text state.key ]]
-       , HH.div [HP.id_ "map" ][]
+       , HH.div [HP.id "map" ][]
        ]
 
   renderSessionsMenu :: SessionKey -> Array SessionKey ->  H.ComponentHTML Action () m
@@ -100,10 +100,10 @@ component =
          [ HH.text "choose session: " ]
       , HH.select
           [ HP.class_ $ H.ClassName "selection"
-          , HP.id_  "session-menu"
+          , HP.id  "session-menu"
           , HP.value currentSession
           , HE.onValueChange
-              (Just <<<  HandleChangeSessionRequest)
+              (HandleChangeSessionRequest)
           ]
           (sessionOptions sessions currentSession)
       ]

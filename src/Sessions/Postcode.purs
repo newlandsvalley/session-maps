@@ -8,7 +8,8 @@ import Data.Either (Either(..))
 import Data.Maybe (fromJust)
 import Data.Bifunctor (lmap)
 import Partial.Unsafe (unsafePartial)
-import Global (encodeURI)
+-- import Global (encodeURI)
+import JSURI (encodeURIComponent)
 import Data.HTTP.Method (Method(..))
 import Effect.Console (log)
 import Effect.Aff (Aff)
@@ -25,7 +26,7 @@ loadGeoInfo ::
   -> Aff (Either String LonLat)
 loadGeoInfo postcode = do
   let
-    encodedPostcode = unsafePartial (fromJust (encodeURI postcode))
+    encodedPostcode = unsafePartial (fromJust (encodeURIComponent postcode))
     url = "http://api.postcodes.io/postcodes/" <> encodedPostcode
 
   res <- request $ defaultRequest
