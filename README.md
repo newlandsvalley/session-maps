@@ -1,7 +1,7 @@
 session-maps
 ============
 
-work in progress
+DEPRECATED.  This was an experimental project and purescript-openlayers has not been maintained beyond purescript 0.14.
 
 Given that all our music-making takes place remotely thse days, I suppose this project is over-optimistic.  Provide StreetMap views of the venues for all the major Scandi sessions that take place in the UK.  The idea is that eventually it might be incorporated into [tradtunedb](http://www.tradtunedb.org.uk/#/).
 
